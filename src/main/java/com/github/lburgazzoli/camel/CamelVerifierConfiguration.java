@@ -17,18 +17,50 @@
 package com.github.lburgazzoli.camel;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "camel.verifier")
-public class CamelVerifierConfigurationProperties {
+public class CamelVerifierConfiguration {
     /**
      * White list components
      */
     private List<String> components = new ArrayList<>();
 
+    /**
+     * Grape configuration
+     */
+    private Grape grape = new Grape();
+
     public List<String> getComponents() {
         return components;
+    }
+
+    public Grape getGrape() {
+        return grape;
+    }
+
+    public class Grape {
+        /**
+         * Additional maven repositories.
+         */
+        private Map<String, String> repositories = new HashMap<>();
+
+        /**
+         * Grape cache dir.
+         */
+        private String cacheDir;
+
+
+        public Map<String, String> getRepositories() {
+            return repositories;
+        }
+
+        public String getCacheDir() {
+            return cacheDir;
+        }
     }
 }

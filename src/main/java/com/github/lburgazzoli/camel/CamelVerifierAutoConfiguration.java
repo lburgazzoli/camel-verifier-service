@@ -19,47 +19,39 @@ package com.github.lburgazzoli.camel;
 import groovy.lang.GroovyClassLoader;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.model.dataformat.JsonLibrary;
-import org.apache.camel.spi.Registry;
-import org.apache.camel.spring.spi.ApplicationContextRegistry;
+import org.apache.camel.spring.boot.CamelContextConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnProperty(value = "camel.verifier.enabled", matchIfMissing = true)
-@EnableConfigurationProperties(CamelVerifierConfigurationProperties.class)
+@EnableConfigurationProperties(CamelVerifierConfiguration.class)
 public class CamelVerifierAutoConfiguration {
     @Autowired
-    CamelVerifierConfigurationProperties configuration;
-    @Autowired
-    protected ApplicationContext applicationContext;
+    CamelVerifierConfiguration configuration;
 
     @Bean
-    public CamelVerifierComponentFilter componentFilter() {
-        return exchange ->  {
-            String component = exchange.getIn().getHeader("CamelVerifierComponent", String.class);
-            return configuration.getComponents().contains(component);
+    public CamelContextConfiguration contextConfiguration() {
+        return new CamelContextConfiguration() {
+            @Override
+            public void beforeApplicationStart(CamelContext context) {
+                ClassLoader parent = context.getApplicationContextClassLoader();
+                context.setApplicationContextClassLoader(new GroovyClassLoader(parent));
+                context.addComponent("verifier", new CamelVerifierComponent(configuration));
+            }
+
+            @Override
+            public void afterApplicationStart(CamelContext context) {
+            }
         };
     }
 
     @Bean
-    public CamelContext camelContext() {
-        Registry registry = new ApplicationContextRegistry(applicationContext);
-        CamelContext context = new DefaultCamelContext(registry);
-        context.addComponent("grape", new CamelGrapeComponent());
-        context.addComponent("verifier", new CamelVerifierComponent());
-        context.setApplicationContextClassLoader(new GroovyClassLoader(Thread.currentThread().getContextClassLoader()));
-
-        return context;
-    }
-
-    @Bean
-    public RouteBuilder routeBuilder(CamelVerifierComponentFilter componentFilter) {
+    public RouteBuilder routeBuilder() {
         return new RouteBuilder() {
             @Override
             public void configure() throws Exception {
@@ -72,10 +64,9 @@ public class CamelVerifierAutoConfiguration {
                         .setHeader("CamelVerifierOptions").simple("body[options]")
                         .setHeader("CamelVerifierScope").simple("body[scope]")
                         .setHeader("CamelGrapeMavenCoordinates").simple("body[gav]")
-                        .filter(componentFilter)
-                            .to("grape:grab")
-                            .to("verifier:verify")
-                                .marshal()
+                        .to("verifier:grab")
+                        .to("verifier:verify")
+                            .marshal()
                                 .json(JsonLibrary.Jackson);
             }
         };
