@@ -16,12 +16,19 @@
  */
 package com.github.lburgazzoli.camel;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import java.util.ArrayList;
+import java.util.List;
 
-@SpringBootApplication
-public class CamelVerifierMain {
-    public static void main(String[] args) {
-        SpringApplication.run(CamelVerifierMain.class, args);
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "camel.verifier")
+public class CamelVerifierConfigurationProperties {
+    /**
+     * White list components
+     */
+    private List<String> components = new ArrayList<>();
+
+    public List<String> getComponents() {
+        return components;
     }
 }

@@ -16,12 +16,11 @@
  */
 package com.github.lburgazzoli.camel;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.apache.camel.Predicate;
 
-@SpringBootApplication
-public class CamelVerifierMain {
-    public static void main(String[] args) {
-        SpringApplication.run(CamelVerifierMain.class, args);
-    }
+/**
+ * Marker interface for component filter
+ */
+@FunctionalInterface
+public interface CamelVerifierComponentFilter extends Predicate {
 }
